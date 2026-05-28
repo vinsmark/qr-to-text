@@ -4,43 +4,83 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title> QR To Text</title>
+    <title>QR To Text</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 
     <style>
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: #f0f2f5;
             display: flex;
             justify-content: center;
-            align-items: center;
+            align-items: flex-start;
             min-height: 100vh;
             margin: 0;
+            padding: 30px 16px;
         }
 
         .card {
             background: white;
-            padding: 40px;
+            padding: 36px 32px;
             border-radius: 16px;
             box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
             width: 100%;
-            max-width: 480px;
+            max-width: 500px;
             text-align: center;
         }
 
         h2 {
             color: #1a73e8;
             margin-top: 0;
+            margin-bottom: 20px;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 12px;
         }
 
+        /* Tab Switcher */
+        .tab-switcher {
+            display: flex;
+            background: #f0f2f5;
+            border-radius: 10px;
+            padding: 4px;
+            margin-bottom: 20px;
+            gap: 4px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 10px 0;
+            border: none;
+            border-radius: 8px;
+            background: transparent;
+            color: #5f6368;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .tab-btn.active {
+            background: white;
+            color: #1a73e8;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Drop Zone */
         #drop-zone {
             border: 3px dashed #1a73e8;
-            padding: 60px 20px;
+            padding: 50px 20px;
             border-radius: 12px;
             cursor: pointer;
             background: #f8fbff;
@@ -50,10 +90,9 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 15px;
+            gap: 12px;
         }
 
-        /* Drag & Drop Hover State */
         #drop-zone.dragging {
             background: #e1efff;
             border-color: #0d47a1;
@@ -61,38 +100,257 @@
         }
 
         #drop-zone i {
-            font-size: 50px;
+            font-size: 46px;
         }
 
-        textarea {
+        .instruction {
+            font-size: 13px;
+            color: #5f6368;
+            font-weight: normal;
+        }
+
+        /* Camera Section */
+        #camera-section {
+            display: none;
+        }
+
+        #camera-section.active {
+            display: block;
+        }
+
+        #upload-section.hidden {
+            display: none;
+        }
+
+        .camera-preview-wrapper {
+            position: relative;
             width: 100%;
-            height: 120px;
-            margin-top: 25px;
-            border: 1px solid #ced4da;
-            padding: 15px;
-            border-radius: 8px;
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 14px;
-            resize: none;
-            background: #fdfdfd;
-            box-sizing: border-box;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #111;
+            aspect-ratio: 1 / 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
+        #camera-video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .scan-overlay {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+        }
+
+        .scan-frame {
+            width: 62%;
+            height: 62%;
+            border: 3px solid rgba(255, 255, 255, 0.85);
+            border-radius: 16px;
+            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.35);
+            position: relative;
+        }
+
+        /* Animated scanner line */
+        .scan-line {
+            position: absolute;
+            left: 6px;
+            right: 6px;
+            height: 2px;
+            background: linear-gradient(to right, transparent, #1a73e8, transparent);
+            animation: scanMove 2s ease-in-out infinite;
+            border-radius: 2px;
+        }
+
+        @keyframes scanMove {
+            0% {
+                top: 8px;
+                opacity: 0;
+            }
+
+            10% {
+                opacity: 1;
+            }
+
+            90% {
+                opacity: 1;
+            }
+
+            100% {
+                top: calc(100% - 10px);
+                opacity: 0;
+            }
+        }
+
+        .camera-tip {
+            margin-top: 10px;
+            font-size: 13px;
+            color: #5f6368;
+        }
+
+        .camera-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 14px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 11px 0;
+            border-radius: 8px;
+            border: none;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background: #1a73e8;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #1558b0;
+        }
+
+        .btn-secondary {
+            background: #f0f2f5;
+            color: #3c4043;
+        }
+
+        .btn-secondary:hover {
+            background: #e2e5e9;
+        }
+
+        .btn-danger {
+            background: #fce8e6;
+            color: #c5221f;
+        }
+
+        .btn-danger:hover {
+            background: #f5c6c5;
+        }
+
+        /* Status */
         .status {
-            margin-top: 20px;
+            margin-top: 18px;
             font-weight: 600;
             min-height: 24px;
+            font-size: 14px;
+        }
+
+        /* Result Box */
+        .result-box {
+            margin-top: 18px;
+            border: 1px solid #ced4da;
+            border-radius: 10px;
+            background: #fdfdfd;
+            text-align: left;
+            overflow: hidden;
+            display: none;
+        }
+
+        .result-box.visible {
+            display: block;
+        }
+
+        .result-label {
+            padding: 8px 14px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #5f6368;
+            background: #f8f9fa;
+            border-bottom: 1px solid #ced4da;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .result-content {
+            padding: 14px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 14px;
+            word-break: break-all;
+            color: #202124;
+            line-height: 1.6;
+        }
+
+        .result-content a {
+            color: #1a73e8;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+
+        /* Go to Website Banner */
+        .go-banner {
+            margin-top: 14px;
+            background: #e6f4ea;
+            border: 1.5px solid #81c995;
+            border-radius: 10px;
+            padding: 12px 16px;
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .go-banner.visible {
+            display: flex;
+        }
+
+        .go-banner-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: #137333;
+            font-weight: 600;
+        }
+
+        .go-btn {
+            background: #1a73e8;
+            color: white;
+            border: none;
+            border-radius: 7px;
+            padding: 8px 16px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+            transition: background 0.2s;
+        }
+
+        .go-btn:hover {
+            background: #1558b0;
         }
 
         canvas {
             display: none;
         }
 
-        .instruction {
-            font-size: 13px;
+        /* Camera not available message */
+        .no-camera-msg {
+            padding: 40px 20px;
             color: #5f6368;
-            margin-top: 10px;
-            font-weight: normal;
+            font-size: 14px;
+            border: 2px dashed #ced4da;
+            border-radius: 12px;
+            display: none;
         }
     </style>
 </head>
@@ -102,17 +360,71 @@
     <div class="card">
         <h2><i class="fas fa-qrcode"></i> QR to Text</h2>
 
-        <div id="drop-zone">
-            <i class="fas fa-file-import"></i>
-            <span>Drop QR Image Here or Click to Upload</span>
-            <span class="instruction">Supports PNG, JPG, WEBP</span>
+        <!-- Tab Switcher -->
+        <div class="tab-switcher">
+            <button class="tab-btn active" id="tab-upload" onclick="switchTab('upload')">
+                <i class="fas fa-file-import"></i> Upload Image
+            </button>
+            <button class="tab-btn" id="tab-camera" onclick="switchTab('camera')">
+                <i class="fas fa-camera"></i> Scan via Camera
+            </button>
         </div>
 
-        <input type="file" id="file-input" hidden accept="image/*">
+        <!-- Upload Section -->
+        <div id="upload-section">
+            <div id="drop-zone">
+                <i class="fas fa-file-import"></i>
+                <span>Drop QR Image Here or Click to Upload</span>
+                <span class="instruction">Supports PNG, JPG, WEBP</span>
+            </div>
+            <input type="file" id="file-input" hidden accept="image/*">
+        </div>
 
+        <!-- Camera Section -->
+        <div id="camera-section">
+            <div class="camera-preview-wrapper">
+                <video id="camera-video" autoplay playsinline muted></video>
+                <div class="scan-overlay">
+                    <div class="scan-frame">
+                        <div class="scan-line"></div>
+                    </div>
+                </div>
+            </div>
+            <p class="camera-tip"><i class="fas fa-info-circle"></i> Hold a QR code inside the frame — it scans
+                automatically.</p>
+            <div class="camera-controls">
+                <button class="btn btn-secondary" onclick="flipCamera()">
+                    <i class="fas fa-sync-alt"></i> Flip Camera
+                </button>
+                <button class="btn btn-danger" onclick="stopCamera()">
+                    <i class="fas fa-stop-circle"></i> Stop Camera
+                </button>
+            </div>
+            <div class="no-camera-msg" id="no-camera-msg">
+                <i class="fas fa-video-slash" style="font-size:32px;display:block;margin-bottom:10px;"></i>
+                Camera not available or permission denied.<br>Please use the Upload tab instead.
+            </div>
+        </div>
+
+        <!-- Status -->
         <div id="status" class="status"></div>
 
-        <textarea id="result" placeholder="Decoded content will appear here..." readonly></textarea>
+        <!-- Result Box -->
+        <div class="result-box" id="result-box">
+            <div class="result-label">Decoded Content</div>
+            <div class="result-content" id="result-content"></div>
+        </div>
+
+        <!-- Go to Website Banner -->
+        <div class="go-banner" id="go-banner">
+            <div class="go-banner-left">
+                <i class="fas fa-check-circle"></i>
+                <span>URL detected</span>
+            </div>
+            <button class="go-btn" id="go-btn" onclick="goToWebsite()">
+                Go to Website <i class="fas fa-external-link-alt"></i>
+            </button>
+        </div>
     </div>
 
     <canvas id="hidden-canvas"></canvas>
@@ -121,76 +433,208 @@
         const fileInput = document.getElementById('file-input');
         const dropZone = document.getElementById('drop-zone');
         const status = document.getElementById('status');
-        const result = document.getElementById('result');
+        const resultBox = document.getElementById('result-box');
+        const resultContent = document.getElementById('result-content');
+        const goBanner = document.getElementById('go-banner');
+        const goBtn = document.getElementById('go-btn');
         const canvas = document.getElementById('hidden-canvas');
         const ctx = canvas.getContext('2d');
+        const video = document.getElementById('camera-video');
 
-        // Click to upload
+        let stream = null;
+        let scanInterval = null;
+        let facingMode = 'environment'; // back camera by default
+        let detectedURL = null;
+        let cameraRunning = false;
+
+        /* ─── Tab Switching ─── */
+        function switchTab(tab) {
+            document.getElementById('tab-upload').classList.toggle('active', tab === 'upload');
+            document.getElementById('tab-camera').classList.toggle('active', tab === 'camera');
+            document.getElementById('upload-section').classList.toggle('hidden', tab !== 'upload');
+            document.getElementById('camera-section').classList.toggle('active', tab === 'camera');
+
+            clearResult();
+
+            if (tab === 'camera') {
+                startCamera();
+            } else {
+                stopCamera();
+            }
+        }
+
+        /* ─── Upload / Drop ─── */
         dropZone.onclick = () => fileInput.click();
 
-        // Drag and Drop Logic
-        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-            dropZone.addEventListener(eventName, (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-            }, false);
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(ev => {
+            dropZone.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); });
         });
 
         dropZone.addEventListener('dragenter', () => dropZone.classList.add('dragging'));
         dropZone.addEventListener('dragover', () => dropZone.classList.add('dragging'));
         dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragging'));
-
-        dropZone.addEventListener('drop', (e) => {
+        dropZone.addEventListener('drop', e => {
             dropZone.classList.remove('dragging');
-            const files = e.dataTransfer.files;
-            if (files.length) handleFile(files[0]);
+            if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
         });
 
-        fileInput.onchange = (e) => {
+        fileInput.onchange = e => {
             if (e.target.files.length) handleFile(e.target.files[0]);
         };
 
         function handleFile(file) {
             if (!file.type.startsWith('image/')) {
-                status.innerHTML = '<i class="fas fa-times-circle"></i> Please upload an image file.';
-                status.style.color = "red";
+                showStatus('error', 'Please upload an image file.');
                 return;
             }
 
-            status.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing image...';
-            status.style.color = "#1a73e8";
+            showStatus('loading', 'Processing image...');
+            clearResult();
 
             const reader = new FileReader();
-            reader.onload = (event) => {
+            reader.onload = event => {
                 const img = new Image();
                 img.onload = () => {
-                    // 1. Add massive 100px padding to fix "Quiet Zone" issues
                     const p = 100;
-                    canvas.width = img.width + (p * 2);
-                    canvas.height = img.height + (p * 2);
-
-                    // 2. Apply high contrast and grayscale filters for better recognition
+                    canvas.width = img.width + p * 2;
+                    canvas.height = img.height + p * 2;
                     ctx.filter = 'grayscale(100%) contrast(250%)';
-                    ctx.fillStyle = "white";
+                    ctx.fillStyle = 'white';
                     ctx.fillRect(0, 0, canvas.width, canvas.height);
                     ctx.drawImage(img, p, p);
-
                     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
                     const code = jsQR(imageData.data, imageData.width, imageData.height);
-
                     if (code) {
-                        result.value = code.data;
-                        status.innerHTML = '<i class="fas fa-check-circle"></i> SUCCESS!';
-                        status.style.color = "green";
+                        showStatus('success', 'Decoded successfully!');
+                        displayResult(code.data);
                     } else {
-                        status.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Decoding failed. The image may be too distorted.';
-                        status.style.color = "red";
-                        result.value = "";
+                        showStatus('error', 'Decoding failed. The image may be too distorted.');
                     }
                 };
                 img.src = event.target.result;
             };
             reader.readAsDataURL(file);
+        }
+
+        /* ─── Camera ─── */
+        async function startCamera() {
+            const noCamMsg = document.getElementById('no-camera-msg');
+            noCamMsg.style.display = 'none';
+            video.style.display = 'block';
+
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                noCamMsg.style.display = 'block';
+                video.style.display = 'none';
+                return;
+            }
+
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: { ideal: facingMode } }
+                });
+                video.srcObject = stream;
+                cameraRunning = true;
+                startScanning();
+            } catch (err) {
+                noCamMsg.style.display = 'block';
+                video.style.display = 'none';
+                showStatus('error', 'Camera permission denied.');
+            }
+        }
+
+        function stopCamera() {
+            if (stream) {
+                stream.getTracks().forEach(t => t.stop());
+                stream = null;
+            }
+            if (scanInterval) {
+                clearInterval(scanInterval);
+                scanInterval = null;
+            }
+            cameraRunning = false;
+            video.srcObject = null;
+        }
+
+        async function flipCamera() {
+            facingMode = (facingMode === 'environment') ? 'user' : 'environment';
+            stopCamera();
+            await startCamera();
+        }
+
+        function startScanning() {
+            if (scanInterval) clearInterval(scanInterval);
+            scanInterval = setInterval(() => {
+                if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    ctx.filter = 'none';
+                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    const code = jsQR(imageData.data, imageData.width, imageData.height, {
+                        inversionAttempts: 'dontInvert'
+                    });
+                    if (code) {
+                        clearInterval(scanInterval);
+                        scanInterval = null;
+                        showStatus('success', 'QR code scanned!');
+                        displayResult(code.data);
+                        stopCamera();
+                        // Switch back to upload tab UI but keep camera section visible with result
+                    }
+                }
+            }, 300);
+        }
+
+        /* ─── Result Display ─── */
+        function displayResult(text) {
+            resultBox.classList.add('visible');
+            detectedURL = null;
+
+            if (isURL(text)) {
+                detectedURL = text.startsWith('http') ? text : 'https://' + text;
+                resultContent.innerHTML = `<a onclick="goToWebsite()" title="Open link">${escapeHTML(text)}</a>`;
+                goBanner.classList.add('visible');
+            } else {
+                resultContent.textContent = text;
+                goBanner.classList.remove('visible');
+            }
+        }
+
+        function clearResult() {
+            resultBox.classList.remove('visible');
+            goBanner.classList.remove('visible');
+            resultContent.innerHTML = '';
+            detectedURL = null;
+            status.innerHTML = '';
+        }
+
+        function isURL(str) {
+            try {
+                const url = new URL(str.startsWith('http') ? str : 'https://' + str);
+                return url.hostname.includes('.');
+            } catch {
+                return false;
+            }
+        }
+
+        function escapeHTML(str) {
+            return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+        function goToWebsite() {
+            if (detectedURL) window.open(detectedURL, '_blank', 'noopener,noreferrer');
+        }
+
+        /* ─── Status Helper ─── */
+        function showStatus(type, message) {
+            const icons = {
+                loading: '<i class="fas fa-spinner fa-spin"></i>',
+                success: '<i class="fas fa-check-circle"></i>',
+                error: '<i class="fas fa-exclamation-triangle"></i>'
+            };
+            const colors = { loading: '#1a73e8', success: 'green', error: 'red' };
+            status.innerHTML = `${icons[type]} ${message}`;
+            status.style.color = colors[type];
         }
     </script>
 </body>
